@@ -110,7 +110,7 @@ jobs:
           token: ${{ secrets.WORKFLOW_TOKEN }}
 
       - name: Install Ansible
-        run: pip3 install boto boto3
+        run: pip3 install ansible boto boto3
 
       - name: Prepare ssh key and vault password
         run: |
