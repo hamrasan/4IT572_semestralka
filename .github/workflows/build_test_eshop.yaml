@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     if:  ${{ github.ref == 'refs/heads/master' }}
     env:
-      VAULT_PASS: ${{ secrets.AWS_CLI }}
+      VAULT_PASS: ${{ secrets.VAULT_PASS }}
       RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
 
     steps:
