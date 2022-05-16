@@ -3,6 +3,8 @@ name: 'Build and test our Eshop'
 on:
   workflow_dispatch:
   push:
+    branches:
+      - master
   pull_request:
 
 jobs:
@@ -97,6 +99,9 @@ jobs:
     needs: [Build, Test]
     runs-on: ubuntu-latest
     if:  ${{ github.ref == 'refs/heads/master' }}
+    env:
+      VAULT_PASS: ${{ secrets.AWS_CLI }}
+      RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
 
     steps:
       - name: Git Checkout
@@ -104,13 +109,21 @@ jobs:
         with:
           token: ${{ secrets.WORKFLOW_TOKEN }}
 
-      - name: Load node modules and build folder
-        uses: actions/cache@v3
+      - name: Setup Python
+        uses: actions/setup-python@v2.3.1
         with:
-          path: |
-            ~/.npm
-            ./node_modules
-            ./build
-          key: ${{ runner.os }}-build-${{ github.run_id }}
+          python-version: '3.7'
 
-      
+      - name: Install Ansible
+        run: pip3 install boto boto3 ansible==4 ansible-vault
+
+      - name: Prepare ssh key and vault password
+        run: |
+          echo "$VAULT_PASS" > vault_pass.txt
+          chmod 400 vault_pass.txt
+          echo "$RSA_PRIVATE_KEY" > devops.pem
+          chmod 400 devops.pem
+          sudo ssh-keygen -p -f devops.pem -m pem
+
+      - name: Run Ansible
+        run: ansible-playbook ansible/ec2.deploy.yml --ssh-common-args='-o StrictHostKeyChecking=no' --user ec2-user --key-file devops.pem --e @ansible/group_vars/all/aws.yml --vault-password-file vault_pass.txt
